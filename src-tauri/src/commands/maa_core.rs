@@ -40,9 +40,7 @@ fn update_instance_controller(
 ) -> Result<(), String> {
     let cleanup_config = {
         let mut instances = state.instances.lock().map_err(|e| e.to_string())?;
-        let instance = instances
-            .get_mut(instance_id)
-            .ok_or("Instance not found")?;
+        let instance = instances.get_mut(instance_id).ok_or("Instance not found")?;
 
         let old_config = instance.controller_config.clone();
         instance.controller = Some(controller);
@@ -441,7 +439,10 @@ pub async fn maa_connect_controller(
     tauri::async_runtime::spawn_blocking(move || {
         // ControllerPool: 检查是否有可复用的已连接控制器
         let pooled = {
-            let pool = state_arc.controller_pool.lock().map_err(|e| e.to_string())?;
+            let pool = state_arc
+                .controller_pool
+                .lock()
+                .map_err(|e| e.to_string())?;
             pool.get(&config).filter(|c| c.connected()).cloned()
         };
 
@@ -465,7 +466,10 @@ pub async fn maa_connect_controller(
 
         // Pool 中无可用控制器（不存在或已断连），移除过期条目
         {
-            let mut pool = state_arc.controller_pool.lock().map_err(|e| e.to_string())?;
+            let mut pool = state_arc
+                .controller_pool
+                .lock()
+                .map_err(|e| e.to_string())?;
             pool.remove(&config);
         }
 
@@ -567,7 +571,10 @@ pub async fn maa_connect_controller(
 
         // 存入 ControllerPool
         {
-            let mut pool = state_arc.controller_pool.lock().map_err(|e| e.to_string())?;
+            let mut pool = state_arc
+                .controller_pool
+                .lock()
+                .map_err(|e| e.to_string())?;
             pool.insert(config.clone(), controller.clone());
         }
 
