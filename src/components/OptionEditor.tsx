@@ -251,7 +251,7 @@ function InputField({
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 min-w-[80px]">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           {input.icon && (
             <AsyncIcon
               icon={input.icon}
@@ -259,7 +259,7 @@ function InputField({
               className="w-4 h-4 object-contain flex-shrink-0"
             />
           )}
-          <span className="text-sm text-text-tertiary">{inputLabel}</span>
+          <span className="text-sm text-text-tertiary truncate">{inputLabel}</span>
           {inputDescription && (
             <Tooltip content={inputDescription} side="top" align="start" maxWidth="max-w-[200px]">
               <Info className="w-3.5 h-3.5 text-text-muted cursor-help flex-shrink-0" />
@@ -272,10 +272,15 @@ function InputField({
             onChange={onChange}
             placeholder={inputPlaceholder}
             disabled={disabled}
-            className="flex-1"
+            className="w-[30%] flex-shrink-0"
           />
         ) : input.input_type === 'time' ? (
-          <TimeInput value={value} onChange={onChange} disabled={disabled} className="flex-1" />
+          <TimeInput
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            className="w-[30%] flex-shrink-0"
+          />
         ) : (
           <TextInput
             value={value}
@@ -283,7 +288,7 @@ function InputField({
             placeholder={inputPlaceholder}
             disabled={disabled}
             hasError={!!validationError}
-            className="flex-1"
+            className="w-[30%] flex-shrink-0"
             type={input.pipeline_type === 'int' ? 'number' : 'text'}
             inputMode={input.pipeline_type === 'int' ? 'numeric' : undefined}
             step={input.pipeline_type === 'int' ? 1 : undefined}
@@ -292,7 +297,7 @@ function InputField({
         )}
       </div>
       {validationError && (
-        <div className="flex items-center gap-1 text-xs text-error ml-[92px]">
+        <div className="flex items-center gap-1 text-xs text-error justify-end">
           <AlertCircle className="w-3 h-3" />
           <span>{validationError}</span>
         </div>
@@ -397,40 +402,65 @@ export function OptionEditor({
   // Switch 类型
   if (optionDef.type === 'switch') {
     const isChecked = value?.type === 'switch' ? value.value : false;
+    const handleToggleSwitch = () => {
+      if (effectiveDisabled) return;
+      setTaskOptionValue(instanceId, taskId, optionKey, {
+        type: 'switch',
+        value: !isChecked,
+      });
+    };
+    const handleSwitchRowKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+      if (event.target !== event.currentTarget) return;
+      if (event.repeat) return;
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      handleToggleSwitch();
+    };
 
     return (
-      <div className={clsx('space-y-2', depth > 0 && 'ml-4 pl-3 border-l-2 border-border')}>
+      <div className={clsx('space-y-3', depth > 0 && 'ml-4 pl-3 border-l-2 border-border')}>
         <div
           className={clsx(
-            'flex items-center justify-between',
+            'flex items-center justify-between gap-3 rounded-md px-2 py-1.5 -mx-2 transition-colors',
+            !effectiveDisabled && 'cursor-pointer hover:bg-bg-hover',
+            effectiveDisabled && 'cursor-not-allowed',
             isOptionIncompatible && 'opacity-60',
           )}
+          onClick={(e) => {
+            if ((e.target as HTMLElement).closest('a')) return;
+            handleToggleSwitch();
+          }}
+          onKeyDown={handleSwitchRowKeyDown}
+          role="switch"
+          tabIndex={effectiveDisabled ? -1 : 0}
+          aria-checked={isChecked}
+          aria-disabled={effectiveDisabled}
         >
-          <OptionLabelWithIncompatible
-            label={optionLabel}
-            icon={optionDef.icon}
-            basePath={basePath}
-            incompatibleReason={incompatibleReason}
-          />
-          <SwitchButton
-            value={isChecked}
-            onChange={(checked) => {
-              setTaskOptionValue(instanceId, taskId, optionKey, {
-                type: 'switch',
-                value: checked,
-              });
-            }}
-            disabled={effectiveDisabled}
-          />
+          <div className="min-w-0 flex-1 max-w-[60%]">
+            <OptionLabelWithIncompatible
+              label={optionLabel}
+              icon={optionDef.icon}
+              basePath={basePath}
+              incompatibleReason={incompatibleReason}
+            />
+            <OptionDescription
+              description={optionDescription}
+              basePath={basePath}
+              translations={translations}
+            />
+          </div>
+          <div className="pointer-events-none flex-shrink-0" aria-hidden="true">
+            <SwitchButton
+              value={isChecked}
+              onChange={handleToggleSwitch}
+              disabled={effectiveDisabled}
+              tabIndex={-1}
+            />
+          </div>
         </div>
-        <OptionDescription
-          description={optionDescription}
-          basePath={basePath}
-          translations={translations}
-        />
         {/* 渲染嵌套选项 */}
         {nestedOptionKeys.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {nestedOptionKeys.map((nestedKey) => (
               <OptionEditor
                 key={nestedKey}
@@ -458,7 +488,7 @@ export function OptionEditor({
     return (
       <div
         className={clsx(
-          'space-y-2',
+          'space-y-3',
           depth > 0 && 'ml-4 pl-3 border-l-2 border-border',
           isOptionIncompatible && 'opacity-60',
         )}
@@ -520,22 +550,24 @@ export function OptionEditor({
     return (
       <div
         className={clsx(
-          'space-y-2',
+          'space-y-3',
           depth > 0 && 'ml-4 pl-3 border-l-2 border-border',
           isOptionIncompatible && 'opacity-60',
         )}
       >
-        <OptionLabelWithIncompatible
-          label={optionLabel}
-          icon={optionDef.icon}
-          basePath={basePath}
-          incompatibleReason={incompatibleReason}
-        />
-        <OptionDescription
-          description={optionDescription}
-          basePath={basePath}
-          translations={translations}
-        />
+        <div className="max-w-[60%]">
+          <OptionLabelWithIncompatible
+            label={optionLabel}
+            icon={optionDef.icon}
+            basePath={basePath}
+            incompatibleReason={incompatibleReason}
+          />
+          <OptionDescription
+            description={optionDescription}
+            basePath={basePath}
+            translations={translations}
+          />
+        </div>
         {optionDef.inputs.map((input) => {
           const inputValue = inputValues[input.name] ?? input.default ?? '';
 
@@ -575,25 +607,31 @@ export function OptionEditor({
   return (
     <div
       className={clsx(
-        'space-y-2',
+        'space-y-3',
         depth > 0 && 'ml-4 pl-3 border-l-2 border-border',
         isOptionIncompatible && 'opacity-60',
       )}
     >
       <div className="flex items-center gap-3">
-        <OptionLabelWithIncompatible
-          label={optionLabel}
-          icon={optionDef.icon}
-          basePath={basePath}
-          incompatibleReason={incompatibleReason}
-        />
+        <div className="min-w-0 flex-1 max-w-[60%]">
+          <OptionLabelWithIncompatible
+            label={optionLabel}
+            icon={optionDef.icon}
+            basePath={basePath}
+            incompatibleReason={incompatibleReason}
+          />
+          <OptionDescription
+            description={optionDescription}
+            basePath={basePath}
+            translations={translations}
+          />
+        </div>
         <SelectComponent
-          className="flex-1"
+          className="w-[30%] flex-shrink-0 ml-auto"
           value={selectedCaseName}
           disabled={effectiveDisabled}
           basePath={basePath}
           options={optionDef.cases.map((caseItem) => {
-            // 对于 MXU 内置选项，使用 t() 翻译；否则使用 resolveI18nText
             const label = isMxuOption
               ? t(caseItem.label || caseItem.name)
               : resolveI18nText(caseItem.label, langKey) || caseItem.name;
@@ -612,14 +650,9 @@ export function OptionEditor({
           }}
         />
       </div>
-      <OptionDescription
-        description={optionDescription}
-        basePath={basePath}
-        translations={translations}
-      />
       {/* 渲染嵌套选项 */}
       {nestedOptionKeys.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {nestedOptionKeys.map((nestedKey) => (
             <OptionEditor
               key={nestedKey}
